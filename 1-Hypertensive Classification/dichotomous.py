@@ -29,8 +29,8 @@ class CustomGaussianBlurWeighted(object):
 torch.manual_seed(40)
 
 batch_size = 16
-learning_rate = 0.001
-num_epochs = 10
+learning_rate = 0.01
+num_epochs = 30
 
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
@@ -77,7 +77,7 @@ for epoch in range(num_epochs):
 
         if (i + 1) % 2 == 0:
             print(f"Epoch [{epoch + 1}/{num_epochs}], Step [{i + 1}/{total_step}], Loss: {loss.item()}")
-torch.save(model, 'model/c.pth')
+torch.save(model, 'new_model/c.pth')
 # 测试模型
 model.eval()
 with torch.no_grad():

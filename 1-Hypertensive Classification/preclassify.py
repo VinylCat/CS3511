@@ -13,22 +13,18 @@ test_path = 'test/'
 
 def data_augmentation(image_path, dest_path):
         image = cv2.imread(image_path)
-
         rotations = {
             90: cv2.ROTATE_90_CLOCKWISE,
             180: cv2.ROTATE_180,
             270: cv2.ROTATE_90_COUNTERCLOCKWISE
         }
-
         for angle, code in rotations.items():
             rotated_image = cv2.rotate(image, code)
             rotated_image_path = f"{dest_path.rsplit('.', 1)[0]}_r{angle}.png"
             cv2.imwrite(rotated_image_path, rotated_image)
-
             mirrored_rotated_image =cv2.flip(rotated_image, 1)
             mirrored_image_path = f"{rotated_image_path.rsplit('.', 1)[0]}_m.png"
             cv2.imwrite(mirrored_image_path, mirrored_rotated_image)
-
         mirrored_image = cv2.flip(image, 1)
         mirrored_image_path = f"{dest_path.rsplit('.', 1)[0]}_m.png"
         cv2.imwrite(mirrored_image_path, mirrored_image)
@@ -75,13 +71,11 @@ for label in ['0', '1']:
         shutil.move(src_file_path, dest_file_path)
         print(f"Moved {file} to {dest_file_path}")
 
-for image in os.listdir(images_path):
-    if image in classification:
-        label = classification[image]
-        src_path = os.path.join(images_path, image)
-        dest_path = os.path.join(train_path, label, image)
-        shutil.copy(src_path, dest_path)
-        data_augmentation(src_path, dest_path)
+for label in ['0', '1']:
+    for image in os.listdir(os.path.join(train_path, label)):
+        if image in classification:
+            src_path = os.path.join(train_path, label,image)
+            data_augmentation(src_path, src_path)
 
 print("Images moved to test directories.")
 
