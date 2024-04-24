@@ -7,7 +7,7 @@ from random import sample
 
 # 定义路径变量
 images_path = '1-Images/1-Training Set/'
-groundtruths_path = '2-Groundtruths/HRDC Hypertensive Classification Training Labels.csv'
+groundtruths_path = '2-Groundtruths/HRDC Hypertensive Retinopathy Classification Training Labels.csv'
 train_path = 'train/'
 test_path = 'test/'
 

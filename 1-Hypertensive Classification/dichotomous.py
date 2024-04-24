@@ -12,7 +12,6 @@ import numpy as np
 
 class CustomGaussianBlurWeighted(object):
     """对图像应用加权和高斯模糊的转换"""
-
     def __call__(self, pic):
         # 将PIL Image转换为NumPy数组
         img = np.array(pic)
@@ -22,9 +21,15 @@ class CustomGaussianBlurWeighted(object):
 
         # 将处理后的NumPy数组转换回PIL Image
         return transforms.ToPILImage()(img)
-
     def __repr__(self):
         return self.__class__.__name__ + '()'
+
+class CustomMedianBlurWeighted(object):
+    def __call__(self, pic):
+        img = np.array(pic)
+        k = np.max(img.shape)//20*2 + 1
+        img = cv2.addWeighted(img, 4, cv2.medianBlur(img, k), -4, 128)
+        return transforms.ToPILImage()(img)
 
 torch.manual_seed(40)
 
@@ -60,24 +65,24 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
 
 # 训练模型
-total_step = len(train_loader)
-for epoch in range(num_epochs):
-    for i, (images, labels) in enumerate(train_loader):
-        images = images.to(device)
-        labels = labels.to(device)
-
-        # 前向传播
-        outputs = model(images)
-        loss = criterion(outputs, labels)
-
-        # 反向传播和优化
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        if (i + 1) % 2 == 0:
-            print(f"Epoch [{epoch + 1}/{num_epochs}], Step [{i + 1}/{total_step}], Loss: {loss.item()}")
-torch.save(model, 'new_model/c.pth')
+# total_step = len(train_loader)
+# for epoch in range(num_epochs):
+#     for i, (images, labels) in enumerate(train_loader):
+#         images = images.to(device)
+#         labels = labels.to(device)
+#
+#         # 前向传播
+#         outputs = model(images)
+#         loss = criterion(outputs, labels)
+#
+#         # 反向传播和优化
+#         optimizer.zero_grad()
+#         loss.backward()
+#         optimizer.step()
+#
+#         if (i + 1) % 2 == 0:
+#             print(f"Epoch [{epoch + 1}/{num_epochs}], Step [{i + 1}/{total_step}], Loss: {loss.item()}")
+# torch.save(model, 'new_model/c.pth')
 # 测试模型
 model.eval()
 with torch.no_grad():
@@ -86,11 +91,12 @@ with torch.no_grad():
     for images, labels in test_loader:
         images = images.to(device)
         labels = labels.to(device)
-        outputs = model(images)
-        print(outputs)
-        _, predicted = torch.max(outputs.data, 1)
+        out1, out2, tar, emb_w = model(images,labels)
+        out1 = np.argmax(out1, axis=1)
+        #print(outputs)
+        #_, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
-        correct += (predicted == labels).sum().item()
+        correct += (out1 == labels).sum().item()
         break
 
     print(f"Accuracy on test images: {(correct / total) * 100}%")
