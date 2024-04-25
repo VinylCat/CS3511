@@ -4,10 +4,12 @@ import shutil
 import math
 import cv2
 from random import sample
-
+import torchvision.transforms as transforms
+import numpy as np
+from PIL import Image
 # 定义路径变量
 images_path = '1-Images/1-Training Set/'
-groundtruths_path = '2-Groundtruths/HRDC Hypertensive Classification Training Labels.csv'
+groundtruths_path = '2-Groundtruths/HRDC Hypertensive Retinopathy Classification Training Labels.csv'
 train_path = 'train/'
 test_path = 'test/'
 
@@ -28,6 +30,24 @@ def data_augmentation(image_path, dest_path):
         mirrored_image = cv2.flip(image, 1)
         mirrored_image_path = f"{dest_path.rsplit('.', 1)[0]}_m.png"
         cv2.imwrite(mirrored_image_path, mirrored_image)
+        img = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+        output = np.zeros(np.asarray(img).shape, np.uint8)
+        prob = np.random.uniform(0.0005, 0.001)  # 随机噪声比例
+        thres = 1 - prob
+        image = np.asarray(img)
+        for i in range(image.shape[0]):
+            for j in range(image.shape[1]):
+                rdn = np.random.random()
+                if rdn < prob:
+                    output[i][j] = 0
+                elif rdn > thres:
+                    output[i][j] = 255
+                else:
+                    output[i][j] = image[i][j]
+        nosie_image = transforms.ToPILImage()(output)
+        noise_image_path = f"{dest_path.rsplit('.', 1)[0]}_noise.png"
+        img = cv2.cvtColor(np.asarray(nosie_image), cv2.COLOR_RGB2BGR)
+        cv2.imwrite(noise_image_path, img)
 
 # 确保train目录及其子目录0和1存在
 for label in ['0', '1']:
