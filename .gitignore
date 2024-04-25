@@ -2,3 +2,4 @@ compressed/
 *.png
 *.jpg
 *.pth
+**/__pycache__
