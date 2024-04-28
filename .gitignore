@@ -3,3 +3,4 @@ compressed/
 *.jpg
 *.pth
 **/__pycache__
+*.pptx
