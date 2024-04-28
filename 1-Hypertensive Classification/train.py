@@ -7,7 +7,6 @@ from glob import glob
 from collections import OrderedDict
 import numpy as np
 import cv2
-from skimage import measure
 import pandas as pd
 from tqdm import tqdm_notebook, tqdm
 from matplotlib import pyplot as plt
@@ -598,8 +597,6 @@ def my_validate(val_loader, model, criterion):
 
 
 class CustomGaussianBlurWeighted(object):
-    """对图像应用加权和高斯模糊的转换"""
-
     def __call__(self, pic):
         # 将PIL Image转换为NumPy数组
         img = np.array(pic)
@@ -653,70 +650,48 @@ if __name__ == '__main__':
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
-    # dataset = ImageFolder('train', transform=train_transform)
-    # k_folds = 5  # 设定折数
-    # print('Training process initialize.')
-    # num_epochs = 10
-    # kfold = KFold(n_splits=k_folds, shuffle=True, random_state=42)
-    #
-    # model = get_modified_model(model_name='se_resnext50_32x4d', num_outputs=2, pretrained=False, freeze_bn=True,
-    #                            dropout_p=0)
-    #
-    # load_model_weights(model, './model/se_resnext50_32x4d-a260b3a4.pth')
-    # model = model.cuda()  # 如果使用GPU
-    #
-    # print(next(model.parameters()).device)
-    #
-    # criterion = nn.CrossEntropyLoss()
-    # optimizer = optim.Adam(model.parameters(), lr=0.001)
-    # best_loss = 5
-    # for fold, (train_ids, test_ids) in enumerate(kfold.split(dataset)):
-    #     # 分割数据集
-    #     train_subset = Subset(dataset, train_ids)
-    #     test_subset = Subset(dataset, test_ids)
-    #
-    #     # 创建数据加载器
-    #     train_loader = DataLoader(train_subset, batch_size=32, shuffle=True, num_workers=4)
-    #     val_loader = DataLoader(test_subset, batch_size=32, shuffle=False, num_workers=4)
-    #     print(len(train_loader))
-    #     print(len(val_loader))
-    #     # 在这里训练和验证模型
-    #     for epoch in range(num_epochs):
-    #         train_loss, train_score, train_ac_score = my_train(train_loader, model, criterion, optimizer, epoch)
-    #         val_loss, val_score, val_ac_score = my_validate(val_loader, model, criterion)
-    #
-    #         print(
-    #             f'Epoch {epoch + 1}/{num_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Train Score: {train_score:.4f}, Val Score: {val_score:.4f}')
-    #
-    #         # 检查是否有最佳模型
-    #         if val_loss < best_loss:
-    #             best_loss = val_loss
-    #             best_score = val_score
-    #             torch.save(model.state_dict(), f'./new_model/model_fold_{fold + 1}_best.pth')
-    #             print(f'Best Model for Fold {fold + 1} Saved')
-    #
-    #     print(f'Best Loss for Fold {fold + 1}: {best_loss:.4f}, Best Score: {best_score:.4f}')
-    #
-    # print('Training process has finished.')
-    test_dataset = ImageFolder("test", transform=train_transform)
-    test_loader = DataLoader(test_dataset, batch_size=32)
+    dataset = ImageFolder('train', transform=train_transform)
+    k_folds = 5  # 设定折数
+    print('Training process initialize.')
+    num_epochs = 10
+    kfold = KFold(n_splits=k_folds, shuffle=True, random_state=42)
+
     model = get_modified_model(model_name='se_resnext50_32x4d', num_outputs=2, pretrained=False, freeze_bn=True,
-                                                          dropout_p=0)
+                               dropout_p=0)
 
-    load_model_weights(model, './new_model/model_fold_5_best.pth')
+    load_model_weights(model, './model/se_resnext50_32x4d-a260b3a4.pth')
+    model = model.cuda()  # 如果使用GPU
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = model.to(device)  # 确保模型在正确的设备上
-    model.eval()
-    with torch.no_grad():
-        correct = 0
-        total = 0
-        for images, labels in test_loader:
-            images = images.to(device)
-            labels = labels.to(device)
-            out1, out2, tar, emb_w = model(images, labels)
-            out1 = torch.argmax(out1, dim=1).cpu()  # 使用 PyTorch 的 torch.argmax 并将结果转移到 CPU
-            total += labels.size(0)
-            correct += (out1 == labels.cpu()).sum().item()  # 确保 labels 也在 CPU 上
+    print(next(model.parameters()).device)
 
-        print(f"Accuracy on test images: {(correct / total) * 100}%")
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    best_loss = 5
+    for fold, (train_ids, test_ids) in enumerate(kfold.split(dataset)):
+        # 分割数据集
+        train_subset = Subset(dataset, train_ids)
+        test_subset = Subset(dataset, test_ids)
+
+        # 创建数据加载器
+        train_loader = DataLoader(train_subset, batch_size=32, shuffle=True, num_workers=4)
+        val_loader = DataLoader(test_subset, batch_size=32, shuffle=False, num_workers=4)
+        print(len(train_loader))
+        print(len(val_loader))
+        # 在这里训练和验证模型
+        for epoch in range(num_epochs):
+            train_loss, train_score, train_ac_score = my_train(train_loader, model, criterion, optimizer, epoch)
+            val_loss, val_score, val_ac_score = my_validate(val_loader, model, criterion)
+
+            print(
+                f'Epoch {epoch + 1}/{num_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Train Score: {train_score:.4f}, Val Score: {val_score:.4f}')
+
+            # 检查是否有最佳模型
+            if val_loss < best_loss:
+                best_loss = val_loss
+                best_score = val_score
+                torch.save(model.state_dict(), f'./new_model/model_weights_{fold + 1}.pth')
+                print(f'Best Model for Fold {fold + 1} Saved')
+
+        print(f'Best Loss for Fold {fold + 1}: {best_loss:.4f}, Best Score: {best_score:.4f}')
+
+    print('Training process has finished.')
