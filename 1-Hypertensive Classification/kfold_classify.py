@@ -1,3 +1,4 @@
+# coding=utf-8
 import csv
 import os
 import shutil
@@ -30,7 +31,6 @@ def data_augmentation(image_path, dest_path):
         mirrored_image = cv2.flip(image, 1)
         mirrored_image_path = f"{dest_path.rsplit('.', 1)[0]}_m.png"
         cv2.imwrite(mirrored_image_path, mirrored_image)
-
         # img = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
         # output = np.zeros(np.asarray(img).shape, np.uint8)
         # prob = np.random.uniform(0.0005, 0.001)  # 随机噪声比例
@@ -71,26 +71,6 @@ for image in os.listdir(images_path):
         dest_path = os.path.join(train_path, label, image)
         print(f"Copying {src_path} to {dest_path}")  # 打印出正在复制的文件路径
         shutil.copy(src_path, dest_path)
-
-for label in ['0', '1']:
-    os.makedirs(os.path.join(test_path, label), exist_ok=True)
-
-# 对每个分类执行操作
-for label in ['0', '1']:
-    # 计算需要移动的图片数量（约30%）
-    src_dir = os.path.join(train_path, label)
-    files = os.listdir(src_dir)
-    num_to_move = math.ceil(len(files) * 0.3)  # 使用math.ceil确保结果是整数
-
-    # 随机选择要移动的图片
-    files_to_move = sample(files, num_to_move)
-
-    # 移动选中的图片到测试目录
-    for file in files_to_move:
-        src_file_path = os.path.join(src_dir, file)
-        dest_file_path = os.path.join(test_path, label, file)
-        shutil.move(src_file_path, dest_file_path)
-        print(f"Moved {file} to {dest_file_path}")
 
 for label in ['0', '1']:
     for image in os.listdir(os.path.join(train_path, label)):
